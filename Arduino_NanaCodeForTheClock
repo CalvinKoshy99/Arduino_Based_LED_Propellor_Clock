@@ -1,0 +1,77 @@
+int LED1 = 2, LED2 = 3, LED3 = 4, LED4 = 5, LED5 = 6, LED6 = 7, LED7 = 8, LED8 = 9; // Define LED pin numbers
+int LED9 = 10, LED10 = 11, LED11 = 12, LED12 = A1, LED13 = A2, LED14 = A3, LED15 = A4, LED16 = A5; // More LED pins
+int sensorPin = A0; // Sensor pin
+
+unsigned int n, ADCvalue, propeller_posn; // Variables for motor position and ADC value
+unsigned long previousTime = 0; // Stores previous time for delay calculations
+byte hours = 12, minutes = 15, seconds = 0; // Time variables
+int val; // Stores sensor value
+
+void setup() {
+    pinMode(sensorPin, INPUT_PULLUP); // Set sensor pin as input with pull-up resistor
+    for (int i = 2; i <= 12; i++) pinMode(i, OUTPUT); // Set digital pins as outputs
+    for (int i = A1; i <= A5; i++) pinMode(i, OUTPUT); // Set analog pins as outputs
+    
+    if (hours == 12) hours = 0; // Convert 12-hour format to 0 for easier calculations
+}
+
+void loop() {
+    val = digitalRead(sensorPin); // Read sensor state
+    while (val == LOW) val = digitalRead(sensorPin); // Wait until sensor is triggered
+
+    if (millis() >= previousTime) { // Check if one second has passed
+        previousTime += 1000; // Increment previousTime by 1 second
+        seconds++; // Increment seconds counter
+        if (seconds == 60) { seconds = 0; minutes++; } // Reset seconds and increment minutes
+        if (minutes == 60) { minutes = 0; hours++; } // Reset minutes and increment hours
+        if (hours == 12) hours = 0; // Reset hours after 12
+    }
+
+    propeller_posn = 30; // Initialize propeller position
+    n = 0; // Initialize counter
+    while (n < 60) { // Loop for 60 positions
+        drawMinuteMarker(); // Draw minute marker
+        if (propeller_posn % 5 == 0) drawHourMarker(); // Draw hour marker at every 5th position
+        if (propeller_posn % 15 == 0) drawQuarterMarker(); // Draw quarter marker at every 15th position
+        if (propeller_posn == hours * 5 || (propeller_posn == 0 && hours == 0)) drawHoursHand(); // Draw hour hand
+        if (propeller_posn == minutes) drawMinutesHand(); // Draw minute hand
+        if (propeller_posn == seconds) drawSecondsHand(); // Draw second hand
+
+        delayMicroseconds(140); // Small delay for LED refresh rate
+        displayClear(); // Clear display
+        drawInner_Circle(); // Draw inner circle for visibility
+        delayMicroseconds(600); // Additional delay for LED effect
+
+        n++; // Increment position counter
+        propeller_posn = (propeller_posn + 1) % 60; // Increment and wrap around propeller position
+    }
+
+    while (digitalRead(sensorPin) == HIGH); // Wait for next sensor trigger
+}
+
+void displayClear() {
+    for (int i = 2; i <= 12; i++) digitalWrite(i, LOW); // Turn off all digital LEDs
+    for (int i = A1; i <= A5; i++) digitalWrite(i, LOW); // Turn off all analog LEDs
+}
+
+void drawMinuteMarker() { digitalWrite(LED16, HIGH); } // Light up LED for minute marker
+void drawHourMarker() { digitalWrite(LED15, HIGH); digitalWrite(LED14, HIGH); } // Light up LEDs for hour marker
+void drawQuarterMarker() { digitalWrite(LED13, HIGH); digitalWrite(LED12, HIGH); } // Light up LEDs for quarter marker
+
+void drawHoursHand() {
+    for (int i = 1; i <= 7; i++) digitalWrite(i + 1, HIGH); // Light up LEDs for hour hand
+}
+
+void drawMinutesHand() {
+    for (int i = 1; i <= 9; i++) digitalWrite(i + 1, HIGH); // Light up LEDs for minute hand
+}
+
+void drawSecondsHand() {
+    for (int i = 1; i <= 11; i++) digitalWrite(i + 1, HIGH); // Light up LEDs for second hand
+}
+
+void drawInner_Circle() {
+    digitalWrite(LED1, HIGH); // Light up center LED
+    delayMicroseconds(30); // Small delay for visibility
+    digitalWrite(LED1, LOW); // Turn off center LED
+}
